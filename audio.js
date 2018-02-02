@@ -5,9 +5,11 @@ root.concertHallBuffer = null;
 root.analyser = audioCtx.createAnalyser();
 root.canvasCtx = document.getElementById('canvas').getContext('2d');
 
+
 root.a = {};
 root.v = {};
 root.c = {};
+root.s = {};
 
 // audio
 
@@ -42,6 +44,7 @@ a.playSong = function () {
     analyser.connect(audioCtx.destination);
     soundSource.start();
     c.draw();
+    s.renderChart();
 }
 a.stopSong = function () {
     soundSource.stop();
@@ -64,7 +67,7 @@ v.getAnalyserData = function () {
 
 c.draw = function () {
     var dataArray = v.getAnalyserData();
-    drawVisual = requestAnimationFrame(c.draw);
+    requestAnimationFrame(c.draw);
     canvasCtx.fillStyle = 'rgb(152, 222, 111)';
     canvasCtx.fillRect(0, 0, 300, 300);
 
@@ -82,6 +85,55 @@ c.draw = function () {
       }
 }
 
+// svg
+var svgHeight = 300;
+var svgWidth = 300;
+var barPadding = 1;
+
+s.createSVG = function (parent) {
+    return d3.select(parent)
+                .append('svg')
+                .attr('height', svgHeight)
+                .attr('width', svgWidth);
+};
+
+root.graph = s.createSVG('#graph');
+
+s.drawRects = function (buffer) {
+    graph.selectAll('rect')
+            .data(buffer)
+            .enter()
+            .append('rect')
+            .attr('width', svgWidth / buffer.length)
+            .attr('height', function (d) {
+                return d * 4;
+            })
+            .attr('x', function (d, i) {
+                return i * (svgWidth / buffer.length);
+            })
+            .attr('y', function (d) {
+                return svgHeight - d;
+            });
+};
+
+s.drawRects(v.getAnalyserData());
+
+s.updateRects = function (buffer) {
+    graph.selectAll('rect')
+            .data(buffer)
+            .attr('height', function (d) {
+                return d * 4;
+            })
+            .attr('y', function (d) {
+                return svgHeight - d;
+            });
+}
+
+s.renderChart = function () {
+    requestAnimationFrame(s.renderChart);
+
+    s.updateRects(v.getAnalyserData());
+}
 // Event Listeners
 
 root.playButton = document.getElementById('play');
